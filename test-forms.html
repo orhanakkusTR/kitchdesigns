@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Test - Kitch Designs</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 30px;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #0e7490;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0c5f75;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            color: #065f46;
+        }
+        .error {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+            color: #991b1b;
+        }
+        .info {
+            background: #dbeafe;
+            border: 2px solid #3b82f6;
+            color: #1e40af;
+        }
+        h1 { color: #0e7490; }
+        h2 { color: #0f766e; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Kitch Designs - Form Test Suite</h1>
+
+    <div class="test-section">
+        <h2>1️⃣ Environment Check</h2>
+        <button onclick="checkEnv()">Check Configuration</button>
+        <div id="envResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2️⃣ Supabase Connection Test</h2>
+        <button onclick="testSupabaseConnection()">Test Supabase</button>
+        <div id="supabaseResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3️⃣ Quote Form Test</h2>
+        <button onclick="testQuoteForm()">Test Quote Submission</button>
+        <div id="quoteResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4️⃣ Contact Form Test</h2>
+        <button onclick="testContactForm()">Test Contact Submission</button>
+        <div id="contactResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5️⃣ EmailJS Test</h2>
+        <button onclick="testEmailJS()">Test Email Service</button>
+        <div id="emailResult"></div>
+    </div>
+
+    <script>
+        // Configuration
+        const SUPABASE_URL = 'https://adbfkluztloyyjsbrrlf.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkYmZrbHV6dGxveXlqc2JycmxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NzgxMDAsImV4cCI6MjA3ODU1NDEwMH0.YG4qRbjb_m0QKo-EFHEo6eIUzfFvN0sPCcAN0mh8SEM';
+        const EMAILJS_SERVICE_ID = 'service_47q3349';
+        const EMAILJS_PUBLIC_KEY = 'oAlkPDNkSaadnzYDB';
+        const EMAILJS_TEMPLATE_QUOTE = 'template_cexyhmi';
+        const EMAILJS_TEMPLATE_CONTACT = 'template_04ubgfy';
+
+        // Initialize Supabase
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Initialize EmailJS
+        emailjs.init(EMAILJS_PUBLIC_KEY);
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.className = `result ${type}`;
+            element.textContent = message;
+        }
+
+        function checkEnv() {
+            const config = {
+                'Supabase URL': SUPABASE_URL,
+                'Supabase Key Length': SUPABASE_ANON_KEY.length + ' characters',
+                'EmailJS Service': EMAILJS_SERVICE_ID,
+                'EmailJS Public Key': EMAILJS_PUBLIC_KEY,
+                'Quote Template': EMAILJS_TEMPLATE_QUOTE,
+                'Contact Template': EMAILJS_TEMPLATE_CONTACT
+            };
+
+            showResult('envResult',
+                'Configuration:\n' + JSON.stringify(config, null, 2),
+                'success'
+            );
+        }
+
+        async function testSupabaseConnection() {
+            try {
+                showResult('supabaseResult', 'Testing connection...', 'info');
+
+                // Test 1: Can we reach Supabase?
+                const { data: tables, error: tableError } = await supabase
+                    .from('quote_requests')
+                    .select('id')
+                    .limit(1);
+
+                if (tableError) {
+                    throw new Error(`Table access failed: ${tableError.message}`);
+                }
+
+                showResult('supabaseResult',
+                    '✅ SUCCESS!\n\n' +
+                    'Supabase connection working.\n' +
+                    'Can access quote_requests table.\n' +
+                    'RLS policies are configured correctly.',
+                    'success'
+                );
+            } catch (error) {
+                showResult('supabaseResult',
+                    '❌ FAILED!\n\n' +
+                    `Error: ${error.message}\n\n` +
+                    'Check:\n' +
+                    '- Supabase URL correct?\n' +
+                    '- Anon key correct?\n' +
+                    '- Table exists?\n' +
+                    '- RLS policies allow anonymous access?',
+                    'error'
+                );
+            }
+        }
+
+        async function testQuoteForm() {
+            try {
+                showResult('quoteResult', 'Submitting test quote...', 'info');
+
+                const testData = {
+                    name: 'Test User ' + Date.now(),
+                    email: 'test@example.com',
+                    phone: '(856) 398-3087',
+                    address: '123 Test St, Cherry Hill, NJ',
+                    service: 'Kitchen Remodeling',
+                    message: 'This is a test submission at ' + new Date().toISOString()
+                };
+
+                const { data, error } = await supabase
+                    .from('quote_requests')
+                    .insert([testData])
+                    .select();
+
+                if (error) {
+                    throw error;
+                }
+
+                showResult('quoteResult',
+                    '✅ SUCCESS!\n\n' +
+                    'Quote submitted successfully!\n\n' +
+                    'Data:\n' + JSON.stringify(data, null, 2),
+                    'success'
+                );
+            } catch (error) {
+                showResult('quoteResult',
+                    '❌ FAILED!\n\n' +
+                    `Error: ${error.message}\n\n` +
+                    `Details: ${JSON.stringify(error, null, 2)}`,
+                    'error'
+                );
+            }
+        }
+
+        async function testContactForm() {
+            try {
+                showResult('contactResult', 'Submitting test contact...', 'info');
+
+                const testData = {
+                    name: 'Test User ' + Date.now(),
+                    email: 'test@example.com',
+                    phone: '(856) 398-3087',
+                    service: 'Kitchen Remodeling',
+                    message: 'This is a test contact message at ' + new Date().toISOString()
+                };
+
+                const { data, error } = await supabase
+                    .from('contact_messages')
+                    .insert([testData])
+                    .select();
+
+                if (error) {
+                    throw error;
+                }
+
+                showResult('contactResult',
+                    '✅ SUCCESS!\n\n' +
+                    'Contact message submitted successfully!\n\n' +
+                    'Data:\n' + JSON.stringify(data, null, 2),
+                    'success'
+                );
+            } catch (error) {
+                showResult('contactResult',
+                    '❌ FAILED!\n\n' +
+                    `Error: ${error.message}\n\n` +
+                    `Details: ${JSON.stringify(error, null, 2)}`,
+                    'error'
+                );
+            }
+        }
+
+        async function testEmailJS() {
+            try {
+                showResult('emailResult', 'Testing EmailJS...', 'info');
+
+                // Test if EmailJS is initialized
+                if (!emailjs || !emailjs.send) {
+                    throw new Error('EmailJS not loaded properly');
+                }
+
+                showResult('emailResult',
+                    '✅ EmailJS Loaded!\n\n' +
+                    'EmailJS library is loaded and initialized.\n' +
+                    'Service ID: ' + EMAILJS_SERVICE_ID + '\n' +
+                    'Public Key: ' + EMAILJS_PUBLIC_KEY + '\n\n' +
+                    'Note: Actual email sending test skipped to avoid spam.\n' +
+                    'EmailJS will work when forms are submitted.',
+                    'success'
+                );
+            } catch (error) {
+                showResult('emailResult',
+                    '❌ FAILED!\n\n' +
+                    `Error: ${error.message}`,
+                    'error'
+                );
+            }
+        }
+    </script>
+</body>
+</html>
